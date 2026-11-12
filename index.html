@@ -109,9 +109,10 @@
   .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
   #custTable td, #custTable th { text-align: left; }
   .privacy-note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .media.staff { grid-template-columns: repeat(3, 1fr); }
   @media (max-width: 820px) {
     .kpis { grid-template-columns: repeat(2, 1fr); }
-    .media, .charts { grid-template-columns: 1fr; }
+    .media, .charts, .media.staff { grid-template-columns: 1fr; }
     .kpi .value { font-size: 24px; }
   }
 </style>
@@ -161,6 +162,10 @@
     <h2>매체별 성과</h2>
     <section class="media" id="media"></section>
 
+    <h2>실장님별 배정</h2>
+    <section class="media staff" id="staff"></section>
+    <section class="card table-scroll" style="margin-top:12px"><table id="staffTable"></table></section>
+
     <h2>추이</h2>
     <section class="charts">
       <div class="card">
@@ -183,7 +188,8 @@
     <p class="foot">
       신청 수는 신청이 들어오는 즉시 반영됩니다. 10/27~11/12는 리드젠 고객관리 기록으로 채웠습니다. 광고비도 입력 즉시 반영됩니다.<br>
       매체 구분: 구글 광고 신청 페이지 / 메타(페이스북·인스타그램) 광고 신청 페이지 기준.<br>
-      CPA = 광고비 ÷ 신청 수. 광고비가 입력되지 않은 날은 CPA를 표시하지 않습니다.
+      CPA = 광고비 ÷ 신청 수. 광고비가 입력되지 않은 날은 CPA를 표시하지 않습니다.<br>
+      실장님별 배정: 리드젠 "DB 배정 리스트"의 배정일시 기준. 매일 아침과 오후에 자동으로 갱신됩니다(–는 아직 집계 전).
     </p>
     </div>
   </div>
@@ -292,6 +298,7 @@
     donut(days);
     cpaChart(days);
     if (!isEditing()) table(days);
+    staffView(days);
     if (typeof renderCust === 'function') renderCust();
   }
 
@@ -358,6 +365,30 @@
     var tn = days.reduce(function (a, d) { return a + leadsOf(d); }, 0), ts = days.reduce(function (a, d) { return a + spendOf(d); }, 0);
     var foot = '<tfoot><tr><td>합계</td>' + MEDIA.map(function (m) { return '<td>' + sum(m.key) + '</td><td>' + (sum(m.spend) ? won(sum(m.spend)) : '–') + '</td>'; }).join('') + '<td>' + tn + '</td><td>' + (ts ? won(ts) + '원' : '–') + '</td><td>' + cpaTxt(ts, tn) + '</td></tr></tfoot>';
     $('table').innerHTML = head + '<tbody>' + (rows || '<tr><td colspan="10" class="empty">선택한 기간에 데이터가 없습니다.</td></tr>') + '</tbody>' + foot;
+  }
+
+  // Leads handed to each TM manager (Leadgen "DB 배정 리스트", by dispatch day).
+  var STAFF_NAMES = { tm104: 'tm104 실장님', tm106: 'tm106 실장님', woojin34: 'woojin34 실장님' };
+  var STAFF_COLORS = { tm104: '#2f9e44', tm106: '#1971c2', woojin34: '#e8590c' };
+  function staffView(days) {
+    var keys = DATA.staff || ['tm104', 'tm106', 'woojin34'];
+    var got = days.filter(function (d) { return d.as; });
+    var tot = function (k) { return got.reduce(function (a, d) { return a + (d.as[k] || 0); }, 0); };
+    var all = keys.reduce(function (a, k) { return a + tot(k); }, 0);
+    $('staff').innerHTML = keys.map(function (k) {
+      var n = tot(k), share = all ? Math.round(n / all * 100) : 0;
+      return '<div class="card"><div class="m-head"><span><span class="dot" style="background:' + STAFF_COLORS[k] + '"></span>' + STAFF_NAMES[k] + '</span><em>비중 ' + share + '%</em></div>' +
+        '<div class="m-grid"><div>배정<b>' + won(n) + '건</b></div><div>일평균<b>' + (got.length ? (n / got.length).toFixed(1) : '–') + '건</b></div><div>&nbsp;<b>&nbsp;</b></div></div>' +
+        '<div class="share"><i style="width:' + share + '%;background:' + STAFF_COLORS[k] + '"></i></div></div>';
+    }).join('');
+    var head = '<thead><tr><th>날짜</th>' + keys.map(function (k) { return '<th style="color:' + STAFF_COLORS[k] + '">' + k + '</th>'; }).join('') + '<th>배정 합계</th></tr></thead>';
+    var rows = days.slice().reverse().map(function (d) {
+      if (!d.as) return '<tr><td>' + md(d.d) + (d.d === DATA.today ? ' (오늘)' : '') + '</td>' + keys.map(function () { return '<td>–</td>'; }).join('') + '<td>–</td></tr>';
+      var n = keys.reduce(function (a, k) { return a + (d.as[k] || 0); }, 0);
+      return '<tr><td>' + md(d.d) + (d.d === DATA.today ? ' (오늘)' : '') + '</td>' + keys.map(function (k) { return '<td>' + (d.as[k] || 0) + '</td>'; }).join('') + '<td><b>' + n + '</b></td></tr>';
+    }).join('');
+    var foot = '<tfoot><tr><td>합계</td>' + keys.map(function (k) { return '<td>' + tot(k) + '</td>'; }).join('') + '<td>' + all + '</td></tr></tfoot>';
+    $('staffTable').innerHTML = head + '<tbody>' + rows + '</tbody>' + foot;
   }
 
   function isEditing() { var a = document.activeElement; return !!(a && a.classList && a.classList.contains('spend-in')); }
