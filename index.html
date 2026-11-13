@@ -189,7 +189,7 @@
       신청 수는 신청이 들어오는 즉시 반영됩니다. 10/27~11/12는 리드젠 고객관리 기록으로 채웠습니다. 광고비도 입력 즉시 반영됩니다.<br>
       매체 구분: 구글 광고 신청 페이지 / 메타(페이스북·인스타그램) 광고 신청 페이지 기준.<br>
       CPA = 광고비 ÷ 신청 수. 광고비가 입력되지 않은 날은 CPA를 표시하지 않습니다.<br>
-      실장님별 배정: 리드젠 "DB 배정 리스트"의 배정일시 기준. 매일 아침과 오후에 자동으로 갱신됩니다(–는 아직 집계 전).
+      실장님별 배정: 고객이 신청한 날 기준으로 셉니다(신청 수와 비교 가능). 한 고객을 두 실장님께 모두 준 경우 양쪽에 1건씩 잡힙니다. 30분마다 자동 갱신(–는 아직 집계 전).
     </p>
     </div>
   </div>
@@ -367,7 +367,7 @@
     $('table').innerHTML = head + '<tbody>' + (rows || '<tr><td colspan="10" class="empty">선택한 기간에 데이터가 없습니다.</td></tr>') + '</tbody>' + foot;
   }
 
-  // Leads handed to each TM manager (Leadgen "DB 배정 리스트", by dispatch day).
+  // Leads handed to each TM manager (Leadgen "DB 배정 리스트", counted on the day the lead arrived).
   var STAFF_NAMES = { tm104: 'tm104 실장님', tm106: 'tm106 실장님', woojin34: 'woojin34 실장님' };
   var STAFF_COLORS = { tm104: '#2f9e44', tm106: '#1971c2', woojin34: '#e8590c' };
   function staffView(days) {
